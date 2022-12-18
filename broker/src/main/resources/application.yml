@@ -1,0 +1,12 @@
+server:
+  port: 7000
+
+spring:
+  application:
+    name: brokerA
+  datasource:
+    url: jdbc:mysql://localhost:3306/mybatis_plus?characterEncoding=utf-8&useSSL=false
+    username: root
+    password: root
+    driverClassName: com.mysql.jdbc.Driver
+
