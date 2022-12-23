@@ -7,7 +7,7 @@ import { RouterLink, RouterView } from 'vue-router'
     <div class="wrapper">
       <nav>
         <router-link to="/">服务器控制台</router-link>
-        <router-link to="/about">用户端模拟器</router-link>
+        <router-link to="/client">用户端模拟器</router-link>
       </nav>
     </div>
   </header>

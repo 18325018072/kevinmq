@@ -1,20 +1,19 @@
 package com.kevin.broker.controller;
 
 
-import com.kevin.broker.dao.HttpUtil;
-import com.kevin.broker.entry.BrokerRoutingInfo;
-import com.kevin.broker.entry.Message;
-import com.kevin.broker.entry.MessageQueue;
-import com.kevin.broker.entry.pac.*;
+import com.kevin.kevinmq.common.BrokerRoutingInfo;
+import com.kevin.broker.entry.pac.ConsumerSubscribeInfoPack;
+import com.kevin.broker.entry.pac.MessagePackFromProducer;
+import com.kevin.broker.service.BrokerService;
+import com.kevin.kevinmq.common.BaseResponsePack;
+import com.kevin.kevinmq.common.Message;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.InetAddress;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 服务器<br/>
@@ -26,69 +25,23 @@ import java.util.*;
 @RestController
 @CrossOrigin
 public class Broker {
-	/**
-	 * 消息的存储主体
-	 */
-	private List<MessageQueue> commitLog = new LinkedList<>();
-
-	/**
-	 * 索引：作为消费消息的索引，保存了指定 Topic 的队列消息在 CommitLog 中的位置。
-	 * {@code ConsumeQueue = HashMap<topic,List<Queue> >}
-	 */
-	private Map<String, List<MessageQueue>> consumeQueue = new HashMap<>();
-	private Integer brokerId;
-
-	/**
-	 * broker名：用于人理解
-	 */
-	@Value("${spring.application.name}")
-	private String brokerName;
-
-	@Value("${server.port}")
-	private int brokerPort;
-
-	private final String ALL_SUB_TAG = "*";
-	private boolean running = false;
-	/**
-	 * 每隔30s 发送心跳到 NameServer：注册 broker 信息
-	 */
-	private Timer timerToNameServer;
-
 	@Autowired
-	private HttpUtil httpUtil;
+	BrokerService service;
 
 	@GetMapping("testBroker")
-	public  BaseResponsePack testUrl(){
-		return new BaseResponsePack(BaseResponsePack.SUCCESS_CODE,null,(running?"running":"shutdown"));
+	public BaseResponsePack testUrl() {
+		return new BaseResponsePack(BaseResponsePack.SUCCESS_CODE, null, service.getBrokerStatus());
 	}
 
 	/**
 	 * 接收 生产者的消息
 	 */
 	@PostMapping("postMessage")
-	public SendResult receiveMessage(@RequestBody MessagePackFromProducer messagePac) {
-		//0.提取数据
+	public BaseResponsePack receiveMessage(@RequestBody MessagePackFromProducer messagePac) {
+		//提取数据
 		Message message = messagePac.getMessage();
 		String producerName = messagePac.getProducerName();
-		//1.检查topic
-		String msgTopic = message.getTopic();
-		if (!consumeQueue.containsKey(msgTopic)) {
-			return new SendResult(SendStatus.Send_Error, message.getMessageId(), "Broker Don't have such topic");
-		}
-		//2.找到对应queue
-		Integer msgQueueId = message.getQueueId();
-		MessageQueue messageQueue;
-		try {
-			messageQueue = consumeQueue.get(msgTopic).get(msgQueueId);
-		} catch (IndexOutOfBoundsException e) {
-			return new SendResult(SendStatus.Send_Error, message.getMessageId(), "Broker's topic Don't have such queueId");
-		}
-		//3.添加消息
-		if (message.getTags() == null || "".equals(message.getTags())) {
-			message.setTags(ALL_SUB_TAG);
-		}
-		messageQueue.addMessage(message);
-		return new SendResult(SendStatus.Send_OK, message.getMessageId(), "success");
+		return service.receiveMessage(message, producerName);
 	}
 
 	/**
@@ -98,56 +51,11 @@ public class Broker {
 	 * @return 消息 list
 	 */
 	@PostMapping("getMessageBatch")
-	public List<Message> getMessageBatch(@RequestBody ConsumerSubscribeInfoPack subscribeInfoPack) {
+	public BaseResponsePack getMessageBatch(@RequestBody ConsumerSubscribeInfoPack subscribeInfoPack) {
 		//提取数据
-		Map<String, String> subInfoMap = subscribeInfoPack.getSubInfoMap();
+		Map<String, List<String>> subInfoMap = subscribeInfoPack.getSubInfoMap();
 		long pullBatchSize = subscribeInfoPack.getPullBatchSize();
-
-		List<Message> res = new ArrayList<>();
-		Set<Map.Entry<String, String>> subEntries = subInfoMap.entrySet();
-		for (Map.Entry<String, String> subEntry : subEntries) {
-			//查询本broker是否有订阅的topic
-			List<MessageQueue> messageQueueList = consumeQueue.get(subEntry.getKey());
-			if (messageQueueList == null) {
-				continue;
-			}
-			//提取tag
-			String subTag = subEntry.getValue();
-			if (subTag == null || "".equals(subTag)) {
-				continue;
-			}
-			String[] split = subTag.split("\\|\\|");
-			String[] subTags = new String[split.length];
-			for (int i = 0; i < split.length; i++) {
-				subTags[i] = split[i].trim();
-			}
-			//进入messageQueueList中提取 未消费的消息
-			for (MessageQueue messageQueue : messageQueueList) {
-				List<Message> messageList = messageQueue.getData();
-				for (Message message : messageList) {
-					if (!message.getConsumeStatus().compareAndSet(0, 1)) {
-						continue;
-					}
-					//检查 messageQueueList 中每条消息的tag是否和订阅要求符合
-					if (subTag.equals(ALL_SUB_TAG)) {
-						res.add(message);
-					} else {
-						//subTags 是否符合 该消息tag
-						for (String tag : subTags) {
-							if (tag.equals(message.getTags())) {
-								res.add(message);
-								break;
-							}
-						}
-					}
-					//如果数量够了，则可以返回
-					if (res.size() >= pullBatchSize) {
-						return res;
-					}
-				}
-			}
-		}
-		return res;
+		return service.getMessageBatch(subInfoMap, pullBatchSize);
 	}
 
 	/**
@@ -155,21 +63,7 @@ public class Broker {
 	 */
 	@PostMapping("solveConsumerFeedback")
 	public BaseResponsePack solveConsumerFeedback(@RequestBody List<Message> consumeResult) {
-		for (Message message : consumeResult) {
-			MessageQueue messageQueue = consumeQueue.get(message.getTopic()).get(message.getQueueId());
-			try {
-				if (message.getConsumeStatus().get() == 2) {
-					//从java缓冲中删除
-					messageQueue.removeMessage(message);
-					//TODO：从数据库删除
-				} else {
-					messageQueue.initMessage(message);
-				}
-			} catch (NullPointerException e) {
-				return BaseResponsePack.simpleFail("messages not exist");
-			}
-		}
-		return BaseResponsePack.simpleSuccess();
+		return service.solveConsumerFeedback(consumeResult);
 	}
 
 	/**
@@ -179,18 +73,8 @@ public class Broker {
 	@PostMapping("addTopic")
 	public BaseResponsePack addTopic(@RequestBody Map<String, Object> map) {
 		String topic = (String) map.get("topic");
-		int queueNum = Integer.parseInt((String) map.get("queueNum")) ;
-		if (consumeQueue.containsKey(topic)) {
-			return BaseResponsePack.simpleFail("topic has been set");
-		}
-		List<MessageQueue> queueList = new ArrayList<>();
-		for (int i = 0; i < queueNum; i++) {
-			MessageQueue queue = new MessageQueue(brokerId, topic, i, new ArrayList<>());
-			queueList.add(queue);
-			commitLog.add(queue);
-		}
-		consumeQueue.put(topic, queueList);
-		return BaseResponsePack.simpleSuccess();
+		int queueNum = Integer.parseInt((String) map.get("queueNum"));
+		return service.addTopic(topic, queueNum);
 	}
 
 	/**
@@ -201,40 +85,16 @@ public class Broker {
 	public BaseResponsePack setQueueNum(@RequestBody Map<String, Object> map) {
 		String topic = (String) map.get("topic");
 		int queueNum = (Integer) map.get("queueNum");
-		List<MessageQueue> queueList = consumeQueue.get(topic);
-		if (queueList == null) {
-			System.out.println("setQueueNum失败，topic不存在");
-			return BaseResponsePack.simpleFail("setQueueNum失败，topic不存在");
-		} else if (running) {
-			return BaseResponsePack.simpleFail("setQueueNum失败，broker正在运行");
-		}
-		while (queueList.size() > queueNum) {
-			commitLog.remove(queueList.get(0));
-			queueList.remove(0);
-		}
-		while (queueList.size() < queueNum) {
-			MessageQueue queue = new MessageQueue(brokerId, topic, queueList.size(), new ArrayList<>());
-			queueList.add(queue);
-			commitLog.add(queue);
-		}
-		return BaseResponsePack.simpleSuccess();
+		return service.setQueueNum(topic, queueNum);
 	}
 
 	/**
 	 * 获取当前broker的路由信息
 	 */
-	@SneakyThrows
+
 	@GetMapping("getBrokerRouting")
 	public BrokerRoutingInfo getBrokerRouting() {
-		Map<String, List<Integer>> topicInfo = new HashMap<>();
-		consumeQueue.forEach((topic, queueList) -> {
-			List<Integer> queueIdList = new ArrayList<>();
-			queueList.forEach((queue) -> {
-				queueIdList.add(queue.getQueueId());
-			});
-			topicInfo.put(topic, queueIdList);
-		});
-		return new BrokerRoutingInfo(InetAddress.getLocalHost().getHostAddress(), brokerPort, brokerName, topicInfo);
+		return service.getBrokerRouting();
 	}
 
 	/**
@@ -242,17 +102,7 @@ public class Broker {
 	 */
 	@GetMapping("shutdown")
 	public BaseResponsePack shutdown() {
-		running = false;
-		try {
-			timerToNameServer.cancel();
-			//通知 NameServer
-			BrokerRoutingInfo brokerRoutingInfo = new BrokerRoutingInfo(InetAddress.getLocalHost().getHostAddress(), brokerPort, brokerName, null);
-			httpUtil.sendShutDownToNameServer(brokerRoutingInfo);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return BaseResponsePack.simpleFail("shutdown fail:" + e.getMessage());
-		}
-		return BaseResponsePack.simpleSuccess();
+		return service.shutdown();
 	}
 
 	/**
@@ -260,19 +110,7 @@ public class Broker {
 	 */
 	@GetMapping("start")
 	public BaseResponsePack start() {
-		brokerId = brokerName.hashCode();
-		running = true;
-		//每隔30s 发送心跳到 NameServer：注册 broker 信息
-		timerToNameServer=new Timer("timerToNameServer");
-		timerToNameServer.scheduleAtFixedRate(new TimerTask() {
-			@Override
-			public void run() {
-				if (running) {
-					httpUtil.sendInfoToNameServer(getBrokerRouting());
-				}
-			}
-		}, 0, 30000);
-		return BaseResponsePack.simpleSuccess();
+		return service.start();
 	}
 
 	/**
@@ -281,11 +119,6 @@ public class Broker {
 	@PostMapping("registerNameServer")
 	public BaseResponsePack registerNameServer(@RequestBody Map<String, String> map) {
 		String nameServerUrl = map.get("nameServerUrl");
-		if (httpUtil.testUrl(nameServerUrl)) {
-			httpUtil.setNameServerUrl(nameServerUrl);
-			return BaseResponsePack.simpleSuccess();
-		} else {
-			return BaseResponsePack.simpleFail("url can't connect");
-		}
+		return service.registerNameServer(nameServerUrl);
 	}
 }

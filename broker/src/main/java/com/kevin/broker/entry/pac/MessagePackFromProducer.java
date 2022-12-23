@@ -1,6 +1,6 @@
 package com.kevin.broker.entry.pac;
 
-import com.kevin.broker.entry.Message;
+import com.kevin.kevinmq.common.Message;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

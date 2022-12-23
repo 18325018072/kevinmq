@@ -1,14 +1,13 @@
 package com.kevin.mqclient.consumer;
 
 
+import com.kevin.kevinmq.common.BrokerRoutingInfo;
+import com.kevin.kevinmq.common.Message;
 import com.kevin.mqclient.dao.HttpUtil;
-import com.kevin.mqclient.entry.BrokerRoutingInfo;
-import com.kevin.mqclient.entry.Message;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Controller;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -49,8 +48,24 @@ public class Consumer {
 	@Autowired
 	private HttpUtil httpUtil;
 
+	/**
+	 * 注册到的名称服务器
+	 */
+	private String nameServerUrl;
+
 	public Consumer(String name) {
 		this.consumerName = name;
+	}
+
+	/**
+	 * 设置命名服务器
+	 */
+	public boolean setNameserverAddr(String url) {
+		if (httpUtil.testUrl(url)) {
+			nameServerUrl = url;
+			return true;
+		}
+		return false;
 	}
 
 	/**
@@ -70,10 +85,10 @@ public class Consumer {
 	 * 解析 订阅表达式 为 tagList
 	 */
 	private List<String> solveSubExpression(String subExpression) {
-		List<String> tagRes = new ArrayList<>();
+		List<String> tagList = new ArrayList<>();
 		if (subExpression == null || subExpression.equals(ALL_SUB) || subExpression.length() == 0) {
 			//这三种情况说明要订阅全部,将subExpression统一设为ALL_SUB
-			tagRes.add(ALL_SUB);
+			tagList.add(ALL_SUB);
 		} else {
 			//subExpression没那么简单，就需要解析了
 			String[] tags = subExpression.split("\\|\\|");
@@ -81,23 +96,23 @@ public class Consumer {
 				if (tag.length() > 0) {
 					tag = tag.trim();
 					if (tag.length() > 0) {
-						tagRes.add(tag.trim());
+						tagList.add(tag.trim());
 					}
 				}
 			}
 		}
-		return tagRes;
+		return tagList;
 	}
 
 	/**
-	 * 清空订阅消息
+	 * 删除订阅消息
 	 */
-	public void clearSubscribe() {
-		subscriptionMap.clear();
+	public void removeSubscribe(String topic) {
+		subscriptionMap.remove(topic);
 	}
 
 	/**
-	 * 接受来自 broker 的消息
+	 * 向 broker 拉取一定数量的消息
 	 */
 	public List<Message> pull(long pullBatchSize) throws Exception {
 		if (!running) {
@@ -125,7 +140,7 @@ public class Consumer {
 	 * 向 NameServer 查询符合要求的 Broker 的信息。
 	 */
 	private void getBrokersFromNameServer() {
-		Map<String, List<BrokerRoutingInfo>> res = httpUtil.getBrokersByTopics(subscriptionMap.keySet());
+		Map<String, List<BrokerRoutingInfo>> res = httpUtil.getBrokersByTopics(subscriptionMap.keySet(), nameServerUrl);
 		res.forEach((topic, brokers) -> {
 			brokerRoutingInfoList = new ArrayList<>();
 			brokerRoutingInfoList.addAll(brokers);

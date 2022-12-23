@@ -1,5 +1,11 @@
+
 server:
   port: 7001
 spring:
   application:
     name: NameServerA
+  datasource:
+    url: jdbc:mysql://localhost:3307/kevin_mq?characterEncoding=utf-8&useSSL=false
+    username: root
+    password: root
+    driverClassName: com.mysql.cj.jdbc.Driver

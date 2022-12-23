@@ -10,10 +10,10 @@ const router = createRouter({
       component: ServerView
     },
     {
-      path: '/about',
-      name: 'about',
+      path: '/client',
+      name: 'client',
       //懒加载
-      component: () => import('../views/ServerView.vue')
+      component: () => import('../views/ClientView.vue')
     }
   ]
 })

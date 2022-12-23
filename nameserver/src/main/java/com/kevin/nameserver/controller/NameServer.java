@@ -1,7 +1,7 @@
 package com.kevin.nameserver.controller;
 
-import com.kevin.nameserver.entry.BrokerRoutingInfo;
-import com.kevin.nameserver.entry.pac.BaseResponsePack;
+import com.kevin.kevinmq.common.BaseResponsePack;
+import com.kevin.kevinmq.common.BrokerRoutingInfo;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -28,7 +28,7 @@ public class NameServer {
 	private boolean running;
 
 	@GetMapping("testNameServer")
-	public  BaseResponsePack testUrl(){
+	public BaseResponsePack testUrl(){
 		return new BaseResponsePack(BaseResponsePack.SUCCESS_CODE,null,(running?"running":"shutdown"));
 	}
 

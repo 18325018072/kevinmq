@@ -1,7 +1,7 @@
 package com.kevin.mqclient.producer;
 
 
-import com.kevin.mqclient.entry.pac.BaseResponsePack;
+import com.kevin.kevinmq.common.BaseResponsePack;
 
 /**
  * 异步发送消息的回调函数

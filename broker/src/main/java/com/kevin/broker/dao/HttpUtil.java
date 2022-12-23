@@ -1,7 +1,7 @@
 package com.kevin.broker.dao;
 
-import com.kevin.broker.entry.BrokerRoutingInfo;
-import com.kevin.broker.entry.pac.BaseResponsePack;
+import com.kevin.kevinmq.common.BaseResponsePack;
+import com.kevin.kevinmq.common.BrokerRoutingInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

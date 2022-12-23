@@ -1,4 +1,4 @@
-package com.kevin.nameserver.entry.pac;
+package com.kevin.kevinmq.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package com.kevin.nameserver.entry;
+package com.kevin.kevinmq.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,15 +18,12 @@ import java.util.Map;
 public class BrokerRoutingInfo {
 	@EqualsAndHashCode.Exclude
 	String ip;
-
 	@EqualsAndHashCode.Exclude
 	Integer port;
-
 	String describe;
 
 	/**
 	 * Broker的仓库信息：{@code map<topic,List<QueueId>>}
 	 */
 	Map<String, List<Integer>> topicInfo;
-
 }

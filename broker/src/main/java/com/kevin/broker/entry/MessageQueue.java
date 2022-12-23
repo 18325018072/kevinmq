@@ -1,6 +1,6 @@
 package com.kevin.broker.entry;
 
-import com.kevin.broker.entry.Message;
+import com.kevin.kevinmq.common.Message;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,10 +29,14 @@ public class MessageQueue {
 		data.add(msg);
 	}
 
-	public boolean removeMessage(Message message){
-		return data.remove(message);
+	public void removeMessage(Message message){
+		data.remove(message);
 	}
-	public void initMessage(Message message){
+
+	/**
+	 * 初始化消息的消费状态
+	 */
+	public void resetMessageConsumeStatus(Message message){
 		for (Message m : data) {
 			if (m.equals(message)) {
 				m.getConsumeStatus().set(0);

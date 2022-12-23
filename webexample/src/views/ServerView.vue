@@ -214,7 +214,7 @@ function registerNameServer() {
 
 <template>
   <div>
-    <div id="name-server" class="console">
+    <div id="name-server" class="block1">
       <h2 class="green">NameServer 控制台</h2>
       <div class="set-ip">
         <label for="input-name-ip">NameServer 的 IP 地址：</label>
@@ -245,7 +245,7 @@ function registerNameServer() {
       <button v-if="isNameServerRunning" @click="getBrokersInfo">刷新NameServer信息</button>
     </div>
 
-    <div id="broker" class="console">
+    <div id="broker" class="block1">
       <h2 class="green">Broker 控制台</h2>
       <div class="set-ip">
         <label for="inputBrokerIp">Broker 的 IP 地址：</label>
@@ -307,7 +307,7 @@ table {
   border: solid;
 }
 
-.console {
+.block1 {
   border: solid;
   margin: 1rem;
   padding: 0.5rem;
