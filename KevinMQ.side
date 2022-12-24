@@ -1,0 +1,414 @@
+{
+  "id": "7b810ad4-9156-4e55-a35a-0bc4b7a717b8",
+  "version": "2.0",
+  "name": "KevinMQ",
+  "url": "http://127.0.0.1:7010",
+  "tests": [{
+    "id": "c1e54bad-c1f6-42fb-ad0c-99f4031ecfa9",
+    "name": "initShop",
+    "commands": [{
+      "id": "3dab23c0-157d-47bd-9d8f-321562cc1cb5",
+      "comment": "",
+      "command": "",
+      "target": "",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "e8b6808c-64b8-4432-a297-5aaa56d6a8c7",
+      "comment": "",
+      "command": "open",
+      "target": "/",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "596c7de3-0e45-4331-a668-e44f35dfef8e",
+      "comment": "",
+      "command": "click",
+      "target": "id=input-name-ip",
+      "targets": [
+        ["id=input-name-ip", "id"],
+        ["css=#input-name-ip", "css:finder"],
+        ["xpath=//input[@id='input-name-ip']", "xpath:attributes"],
+        ["xpath=//div[@id='name-server']/div/input", "xpath:idRelative"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "f0a72a3a-721a-4652-9f45-d02c8d50fc01",
+      "comment": "",
+      "command": "type",
+      "target": "id=input-name-ip",
+      "targets": [
+        ["id=input-name-ip", "id"],
+        ["css=#input-name-ip", "css:finder"],
+        ["xpath=//input[@id='input-name-ip']", "xpath:attributes"],
+        ["xpath=//div[@id='name-server']/div/input", "xpath:idRelative"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": "http://localhost:7001"
+    }, {
+      "id": "189db165-ed12-4a17-b614-1883d490d7ce",
+      "comment": "",
+      "command": "click",
+      "target": "id=name-server",
+      "targets": [
+        ["id=name-server", "id"],
+        ["css=#name-server", "css:finder"],
+        ["xpath=//div[@id='name-server']", "xpath:attributes"],
+        ["xpath=//div[@id='app']/div/div", "xpath:idRelative"],
+        ["xpath=//div/div/div", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "3a2fe1b5-dc38-4b69-ae0d-e5cbb181192c",
+      "comment": "",
+      "command": "click",
+      "target": "id=inputBrokerIp",
+      "targets": [
+        ["id=inputBrokerIp", "id"],
+        ["css=#inputBrokerIp", "css:finder"],
+        ["xpath=//input[@id='inputBrokerIp']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div/input", "xpath:idRelative"],
+        ["xpath=//div[2]/div/input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "3a24e39f-8297-4267-b2e6-504ed2390ea3",
+      "comment": "",
+      "command": "type",
+      "target": "id=inputBrokerIp",
+      "targets": [
+        ["id=inputBrokerIp", "id"],
+        ["css=#inputBrokerIp", "css:finder"],
+        ["xpath=//input[@id='inputBrokerIp']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div/input", "xpath:idRelative"],
+        ["xpath=//div[2]/div/input", "xpath:position"]
+      ],
+      "value": "http://localhost:7000"
+    }, {
+      "id": "f1210db6-f037-4fa4-a55b-a996a6ab981d",
+      "comment": "",
+      "command": "click",
+      "target": "id=inputTargetIp",
+      "targets": [
+        ["id=inputTargetIp", "id"],
+        ["css=#inputTargetIp", "css:finder"],
+        ["xpath=//input[@id='inputTargetIp']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div[2]/input", "xpath:idRelative"],
+        ["xpath=//div[2]/input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "9320af7c-ad4c-4d64-ae86-199de015d5ff",
+      "comment": "",
+      "command": "type",
+      "target": "id=inputTargetIp",
+      "targets": [
+        ["id=inputTargetIp", "id"],
+        ["css=#inputTargetIp", "css:finder"],
+        ["xpath=//input[@id='inputTargetIp']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div[2]/input", "xpath:idRelative"],
+        ["xpath=//div[2]/input", "xpath:position"]
+      ],
+      "value": "http://localhost:7001"
+    }, {
+      "id": "37d4e971-f6f0-45c9-9c5a-46341cfa5c12",
+      "comment": "",
+      "command": "click",
+      "target": "id=add-topic-input",
+      "targets": [
+        ["id=add-topic-input", "id"],
+        ["css=#add-topic-input", "css:finder"],
+        ["xpath=//input[@id='add-topic-input']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div[4]/input", "xpath:idRelative"],
+        ["xpath=//div[4]/input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "bd6acc77-1c89-4be8-8325-4d10cc0915b4",
+      "comment": "",
+      "command": "type",
+      "target": "id=add-topic-input",
+      "targets": [
+        ["id=add-topic-input", "id"],
+        ["css=#add-topic-input", "css:finder"],
+        ["xpath=//input[@id='add-topic-input']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div[4]/input", "xpath:idRelative"],
+        ["xpath=//div[4]/input", "xpath:position"]
+      ],
+      "value": "apple"
+    }, {
+      "id": "649ddd30-e6fe-456c-88ac-119b90151704",
+      "comment": "",
+      "command": "click",
+      "target": "id=queue-num-input",
+      "targets": [
+        ["id=queue-num-input", "id"],
+        ["css=#queue-num-input", "css:finder"],
+        ["xpath=//input[@id='queue-num-input']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div[4]/input[2]", "xpath:idRelative"],
+        ["xpath=//input[2]", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "eef93665-50b5-4698-ae5e-5940a31b9ba2",
+      "comment": "",
+      "command": "type",
+      "target": "id=queue-num-input",
+      "targets": [
+        ["id=queue-num-input", "id"],
+        ["css=#queue-num-input", "css:finder"],
+        ["xpath=//input[@id='queue-num-input']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div[4]/input[2]", "xpath:idRelative"],
+        ["xpath=//input[2]", "xpath:position"]
+      ],
+      "value": "4"
+    }, {
+      "id": "048aa675-14ea-468e-b389-977d0fd09e34",
+      "comment": "",
+      "command": "click",
+      "target": "id=add-topic-btn",
+      "targets": [
+        ["id=add-topic-btn", "id"],
+        ["css=#add-topic-btn", "css:finder"],
+        ["xpath=//button[@id='add-topic-btn']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div[3]/button", "xpath:idRelative"],
+        ["xpath=//div[3]/button", "xpath:position"],
+        ["xpath=//button[contains(.,'确认添加')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "701e26ec-79df-49e1-a9d7-a21f09023541",
+      "comment": "",
+      "command": "click",
+      "target": "id=init-broker-btn",
+      "targets": [
+        ["id=init-broker-btn", "id"],
+        ["css=#init-broker-btn", "css:finder"],
+        ["xpath=//button[@id='init-broker-btn']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/button", "xpath:idRelative"],
+        ["xpath=//div[2]/button", "xpath:position"],
+        ["xpath=//button[contains(.,'启动')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "60be50b4-dfc4-4543-a957-9c7ae73f099d",
+      "comment": "",
+      "command": "click",
+      "target": "linkText=用户端模拟器",
+      "targets": [
+        ["linkText=用户端模拟器", "linkText"],
+        ["css=nav > a:nth-child(2)", "css:finder"],
+        ["xpath=//a[contains(text(),'用户端模拟器')]", "xpath:link"],
+        ["xpath=//div[@id='app']/header/div/nav/a[2]", "xpath:idRelative"],
+        ["xpath=//a[contains(@href, '/client')]", "xpath:href"],
+        ["xpath=//a[2]", "xpath:position"],
+        ["xpath=//a[contains(.,'用户端模拟器')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "abd1ef2c-f524-46fa-9161-270f3dad2621",
+      "comment": "",
+      "command": "click",
+      "target": "id=input-name-ip",
+      "targets": [
+        ["id=input-name-ip", "id"],
+        ["css=#input-name-ip", "css:finder"],
+        ["xpath=//input[@id='input-name-ip']", "xpath:attributes"],
+        ["xpath=//div[@id='app']/div/div/div/input", "xpath:idRelative"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "f7158817-448d-4d45-b2c6-321290eb41e6",
+      "comment": "",
+      "command": "type",
+      "target": "id=input-name-ip",
+      "targets": [
+        ["id=input-name-ip", "id"],
+        ["css=#input-name-ip", "css:finder"],
+        ["xpath=//input[@id='input-name-ip']", "xpath:attributes"],
+        ["xpath=//div[@id='app']/div/div/div/input", "xpath:idRelative"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": "http://localhost:7001"
+    }, {
+      "id": "dfc0f26c-f7fb-435c-8a10-cb56a58216f5",
+      "comment": "",
+      "command": "click",
+      "target": "css=.block1:nth-child(1) > .green",
+      "targets": [
+        ["css=.block1:nth-child(1) > .green", "css:finder"],
+        ["xpath=//div[@id='app']/div/div/h2", "xpath:idRelative"],
+        ["xpath=//h2", "xpath:position"],
+        ["xpath=//h2[contains(.,'苹果商店（Producer）')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }]
+  }, {
+    "id": "779d8fa7-c84d-4cae-892a-fed28e176312",
+    "name": "reInitShop",
+    "commands": [{
+      "id": "b30fd954-93f5-4076-8693-732016064925",
+      "comment": "",
+      "command": "",
+      "target": "",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "003ab68a-ed5e-4d4d-bd16-e6553431f685",
+      "comment": "",
+      "command": "open",
+      "target": "/",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "ba8deab4-ad56-4c74-8d37-49434ae83c66",
+      "comment": "",
+      "command": "click",
+      "target": "id=input-name-ip",
+      "targets": [
+        ["id=input-name-ip", "id"],
+        ["css=#input-name-ip", "css:finder"],
+        ["xpath=//input[@id='input-name-ip']", "xpath:attributes"],
+        ["xpath=//div[@id='name-server']/div/input", "xpath:idRelative"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "21025864-76df-4458-b227-8a3e96e71fe1",
+      "comment": "",
+      "command": "type",
+      "target": "id=input-name-ip",
+      "targets": [
+        ["id=input-name-ip", "id"],
+        ["css=#input-name-ip", "css:finder"],
+        ["xpath=//input[@id='input-name-ip']", "xpath:attributes"],
+        ["xpath=//div[@id='name-server']/div/input", "xpath:idRelative"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": "http://localhost:7001"
+    }, {
+      "id": "1416bc86-bf05-4257-ae80-f28a7269b9b3",
+      "comment": "",
+      "command": "click",
+      "target": "id=inputBrokerIp",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "f0ee72ab-121d-4441-b0fc-70973910322f",
+      "comment": "",
+      "command": "type",
+      "target": "id=inputBrokerIp",
+      "targets": [
+        ["id=inputBrokerIp", "id"],
+        ["css=#inputBrokerIp", "css:finder"],
+        ["xpath=//input[@id='inputBrokerIp']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div/input", "xpath:idRelative"],
+        ["xpath=//div[2]/div/input", "xpath:position"]
+      ],
+      "value": "http://localhost:7000"
+    }, {
+      "id": "e5d12e76-d551-4037-9b7b-4f295e438a84",
+      "comment": "",
+      "command": "click",
+      "target": "id=inputTargetIp",
+      "targets": [
+        ["id=inputTargetIp", "id"],
+        ["css=#inputTargetIp", "css:finder"],
+        ["xpath=//input[@id='inputTargetIp']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div[2]/input", "xpath:idRelative"],
+        ["xpath=//div[2]/input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "76c5780b-2b8f-45bd-b8dc-8df49234dba1",
+      "comment": "",
+      "command": "type",
+      "target": "id=inputTargetIp",
+      "targets": [
+        ["id=inputTargetIp", "id"],
+        ["css=#inputTargetIp", "css:finder"],
+        ["xpath=//input[@id='inputTargetIp']", "xpath:attributes"],
+        ["xpath=//div[@id='broker']/div[2]/input", "xpath:idRelative"],
+        ["xpath=//div[2]/input", "xpath:position"]
+      ],
+      "value": "http://localhost:7001"
+    }, {
+      "id": "f0ce96b3-de2d-4e9b-b6e8-64be4cdb0e2e",
+      "comment": "",
+      "command": "click",
+      "target": "css=#broker > .green",
+      "targets": [
+        ["css=#broker > .green", "css:finder"],
+        ["xpath=//div[@id='broker']/h2", "xpath:idRelative"],
+        ["xpath=//div[2]/h2", "xpath:position"],
+        ["xpath=//h2[contains(.,'Broker 控制台')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "0f99ace9-101c-4879-b824-9fa9ef731f5a",
+      "comment": "",
+      "command": "click",
+      "target": "linkText=用户端模拟器",
+      "targets": [
+        ["linkText=用户端模拟器", "linkText"],
+        ["css=nav > a:nth-child(2)", "css:finder"],
+        ["xpath=//a[contains(text(),'用户端模拟器')]", "xpath:link"],
+        ["xpath=//div[@id='app']/header/div/nav/a[2]", "xpath:idRelative"],
+        ["xpath=//a[contains(@href, '/client')]", "xpath:href"],
+        ["xpath=//a[2]", "xpath:position"],
+        ["xpath=//a[contains(.,'用户端模拟器')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "258ad907-9715-4064-83c1-5cc5d8d2aec6",
+      "comment": "",
+      "command": "click",
+      "target": "id=input-name-ip",
+      "targets": [
+        ["id=input-name-ip", "id"],
+        ["css=#input-name-ip", "css:finder"],
+        ["xpath=//input[@id='input-name-ip']", "xpath:attributes"],
+        ["xpath=//div[@id='app']/div/div/div/input", "xpath:idRelative"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "812f8973-1ba3-49ec-9afb-afe55a792fe5",
+      "comment": "",
+      "command": "type",
+      "target": "id=input-name-ip",
+      "targets": [
+        ["id=input-name-ip", "id"],
+        ["css=#input-name-ip", "css:finder"],
+        ["xpath=//input[@id='input-name-ip']", "xpath:attributes"],
+        ["xpath=//div[@id='app']/div/div/div/input", "xpath:idRelative"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": "http://localhost:7001"
+    }, {
+      "id": "e003560e-1f9b-4ac6-8810-ec718e5854b6",
+      "comment": "",
+      "command": "click",
+      "target": "css=.block1:nth-child(1) > .green",
+      "targets": [
+        ["css=.block1:nth-child(1) > .green", "css:finder"],
+        ["xpath=//div[@id='app']/div/div/h2", "xpath:idRelative"],
+        ["xpath=//h2", "xpath:position"],
+        ["xpath=//h2[contains(.,'苹果商店（Producer）')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }]
+  }],
+  "suites": [{
+    "id": "47406216-0e3c-4a8e-b4fb-0df0b31aa9ba",
+    "name": "Default Suite",
+    "persistSession": false,
+    "parallel": false,
+    "timeout": 300,
+    "tests": ["c1e54bad-c1f6-42fb-ad0c-99f4031ecfa9"]
+  }],
+  "urls": ["http://127.0.0.1:7010/"],
+  "plugins": []
+}
