@@ -8,6 +8,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="nameserver" />
+        <module name="applestore" />
         <module name="broker" />
         <module name="mqclient" />
         <module name="appleshop" />
@@ -17,6 +18,7 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="appleshop" options="-parameters" />
+      <module name="applestore" options="-parameters" />
       <module name="broker" options="-parameters" />
       <module name="mqclient" options="-parameters" />
       <module name="nameserver" options="-parameters" />

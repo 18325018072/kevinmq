@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Kevin2
  */
-@NoArgsConstructor
 @Data
 @Slf4j
 @Component
@@ -44,10 +43,9 @@ public class Producer {
 		}
 	});
 
-	@Autowired
 	private HttpUtil httpUtil;
 
-	private boolean running = false;
+	private boolean running;
 
 	/**
 	 * 每隔30s 拉取 Topic 路由信息
@@ -59,8 +57,9 @@ public class Producer {
 	 */
 	private String nameServerUrl;
 
-	public Producer(String producerName) {
-		this.producerName = producerName;
+	@Autowired
+	public Producer(HttpUtil httpUtil) {
+		this.httpUtil = httpUtil;
 	}
 
 	/**
@@ -78,26 +77,27 @@ public class Producer {
 	 * 启动 Producer
 	 */
 	public void start() {
-		if (running){
+		if (running) {
 			return;
 		}
 		if (nameServerUrl == null) {
 			throw new RuntimeException("please set nameserver first");
 		}
-		updateBrokerInfoTimer=new Timer("updateBrokerInfoTimer");
+		updateBrokerInfoTimer = new Timer("updateBrokerInfoTimer");
 		updateBrokerInfoTimer.scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
 				searchBrokersFromNameServer(topicBrokerMap.keySet());
 			}
-		},0,30000);
+		}, 0, 30000);
+		running = true;
 	}
 
 	/**
 	 * 关闭Producer
 	 */
-	public void shutdown(){
-		if (!running){
+	public void shutdown() {
+		if (!running) {
 			return;
 		}
 		updateBrokerInfoTimer.cancel();
@@ -107,17 +107,19 @@ public class Producer {
 	 * 向 NameServer 查询 topicSet 的 Broker 的信息 /30s。
 	 */
 	private void searchBrokersFromNameServer(Set<String> topicSet) {
-		if (nameServerUrl==null){
+		if (nameServerUrl == null) {
 			throw new RuntimeException("please set nameserver first");
 		}
-		topicBrokerMap = httpUtil.getBrokersByTopics(topicSet, nameServerUrl);
+		if (!topicSet.isEmpty()) {
+			topicBrokerMap = httpUtil.getBrokersByTopics(topicSet, nameServerUrl);
+		}
 	}
 
 	/**
 	 * 向 NameServer 查询某 topic 的 Broker 的信息 /30s。
 	 */
 	private boolean searchBrokersFromNameServer(String hopeTopic) {
-		if (nameServerUrl==null){
+		if (nameServerUrl == null) {
 			throw new RuntimeException("please set nameserver first");
 		}
 		Map<String, List<BrokerRoutingInfo>> brokerMap = httpUtil.getBrokersByTopics(Collections.singleton(hopeTopic), nameServerUrl);
@@ -134,7 +136,7 @@ public class Producer {
 	 * @return 发送结果
 	 */
 	public BaseResponsePack sendSynchronously(Message msg) {
-		if (!running){
+		if (!running) {
 			throw new RuntimeException("please start producer first");
 		}
 		//检查topic-broker路由
@@ -145,13 +147,14 @@ public class Producer {
 		}
 		//随机选择一个 broker
 		List<BrokerRoutingInfo> brokerRoutingInfoList = topicBrokerMap.get(msg.getTopic());
-		BrokerRoutingInfo targetBrokerRoutingInfo = brokerRoutingInfoList.get(new Random().nextInt(brokerRoutingInfoList.size()));
+		int i = new Random().nextInt(brokerRoutingInfoList.size());
+		BrokerRoutingInfo targetBrokerRoutingInfo = brokerRoutingInfoList.get(i);
 		//随机选择一个 queue
 		List<Integer> queueIdList = targetBrokerRoutingInfo.getTopicInfo().get(msg.getTopic());
 		Integer targetQueueId = queueIdList.get(new Random().nextInt(queueIdList.size()));
 		msg.setQueueId(targetQueueId);
 		//发送
-		return httpUtil.sendSynchronously(msg, targetBrokerRoutingInfo, producerName,nameServerUrl);
+		return httpUtil.sendSynchronously(msg, targetBrokerRoutingInfo, producerName, nameServerUrl);
 	}
 
 	/**
@@ -160,7 +163,7 @@ public class Producer {
 	 * @param callback 回调，处理 SendResult 对象
 	 */
 	public void sendAsync(Message msg, SendCallback callback) {
-		if (!running){
+		if (!running) {
 			throw new RuntimeException("please start producer first");
 		}
 		asyncSendPool.execute(() -> {

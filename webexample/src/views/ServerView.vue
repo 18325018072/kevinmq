@@ -164,7 +164,6 @@ function addTopic() {
       .then(function (response) {
         if (response.data.status === 0) {
           getBrokerInfo();
-          alert('添加topic成功');
         }
       })
       .catch(function (error) {
@@ -281,10 +280,10 @@ function registerNameServer() {
         <label for="add-topic-input">新增 topic：</label>
         <input id="add-topic-input" type="text" placeholder="topic名"/>
         <input id="queue-num-input" type="text" placeholder="消息队列数量"/>
-        <button @click="addTopic">确认添加</button>
+        <button id="add-topic-btn" @click="addTopic">确认添加</button>
       </div>
-      <button class="run-btn" v-if="isBrokerRunning" @click="shutdownBroker">关闭</button>
-      <button class="down-btn" v-else @click="initBroker">启动</button>
+      <button id="shutdown-broker-btn" class="run-btn" v-if="isBrokerRunning" @click="shutdownBroker">关闭</button>
+      <button id="init-broker-btn" class="down-btn" v-else @click="initBroker">启动</button>
       <button @click="getBrokerInfo" v-if="isBrokerAvailable">刷新broker信息</button>
     </div>
   </div>

@@ -1,10 +1,10 @@
-package com.kevin.kevinmq.dao;
+package com.kevin.nameserver.dao.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.kevin.kevinmq.common.Log;
-import org.springframework.stereotype.Repository;
+import org.apache.ibatis.annotations.Mapper;
 
-@Repository
+@Mapper
 public interface LogMapper extends BaseMapper<Log> {
 }

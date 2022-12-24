@@ -2,21 +2,19 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.kevin.broker.dao.MessageMapper">
+<mapper namespace="com.kevin.broker.dao.mapper.MessageMapper">
 
     <resultMap id="BaseResultMap" type="com.kevin.kevinmq.common.Message">
             <id property="messageId" column="message_id" jdbcType="BIGINT"/>
             <result property="topic" column="topic" jdbcType="CHAR"/>
-            <result property="tag" column="tags" jdbcType="CHAR"/>
+            <result property="tag" column="tag" jdbcType="CHAR"/>
             <result property="body" column="body" jdbcType="VARCHAR"/>
             <result property="queueId" column="queue_id" jdbcType="INTEGER"/>
-            <result property="consumeStatus" column="consume_status" jdbcType="INTEGER"/>
             <result property="flag" column="flag" jdbcType="INTEGER"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        message_id,topic,tags,
-        body,queue_id,consume_status,
-        flag
+        message_id,topic,tag,
+        body,queue_id, flag
     </sql>
 </mapper>

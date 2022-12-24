@@ -16,9 +16,9 @@ import java.util.Map;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BrokerRoutingInfo {
-	@EqualsAndHashCode.Exclude
+	@EqualsAndHashCode.Include
 	String ip;
-	@EqualsAndHashCode.Exclude
+	@EqualsAndHashCode.Include
 	Integer port;
 	String describe;
 

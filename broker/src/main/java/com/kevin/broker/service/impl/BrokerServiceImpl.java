@@ -2,8 +2,8 @@ package com.kevin.broker.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.kevin.broker.dao.HttpUtil;
-import com.kevin.kevinmq.dao.LogMapper;
-import com.kevin.broker.dao.MessageMapper;
+import com.kevin.broker.dao.mapper.LogMapper;
+import com.kevin.broker.dao.mapper.MessageMapper;
 import com.kevin.kevinmq.common.BrokerRoutingInfo;
 import com.kevin.broker.entry.MessageQueue;
 import com.kevin.broker.service.BrokerService;
@@ -25,7 +25,6 @@ import java.util.*;
  * @createDate 2022-12-19 19:56:44
  */
 @Service
-//public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message>
 public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> implements BrokerService {
 
 	/**
@@ -37,7 +36,11 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 	 * 索引：作为消费消息的索引，保存了指定 Topic 的队列消息在 CommitLog 中的位置。
 	 * {@code ConsumeQueue = HashMap<topic,List<Queue> >}
 	 */
-	private Map<String, List<MessageQueue>> consumeQueue = new HashMap<>();
+	private final Map<String, List<MessageQueue>> consumeQueue = new HashMap<>();
+
+	/**
+	 * start 该broker时自动设置，为 brokername.hashcode
+	 */
 	private Integer brokerId;
 
 	/**
@@ -50,17 +53,21 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 	private int brokerPort;
 
 	private final String ALL_SUB_TAG = "*";
-	private boolean running = false;
+	private boolean running;
 	/**
 	 * 每隔30s 发送心跳到 NameServer：注册 broker 信息
 	 */
 	private Timer timerToNameServer;
 
-	@Autowired
-	private HttpUtil httpUtil;
+	private final HttpUtil httpUtil;
+
+	private final LogMapper logMapper;
 
 	@Autowired
-	private LogMapper logMapper;
+	public BrokerServiceImpl(HttpUtil httpUtil, LogMapper logMapper) {
+		this.httpUtil = httpUtil;
+		this.logMapper = logMapper;
+	}
 
 	@Override
 	public String getBrokerStatus() {
@@ -93,7 +100,7 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 		save(message);
 		//存入缓存
 		messageQueue.addMessage(message);
-		logMapper.insert(new Log("receiveMessage", message));
+		logMapper.insert(new Log("broker:receiveMessage", message));
 		return new BaseResponsePack(0, message.getMessageId(), "success");
 	}
 
@@ -135,13 +142,13 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 					}
 					//如果数量够了，则可以返回
 					if (res.size() >= pullBatchSize) {
-						logMapper.insert(new Log("getMessageBatch", res.toString()));
+						logMapper.insert(new Log("broker:getMessageBatch", res));
 						return new BaseResponsePack(0, res, "success");
 					}
 				}
 			}
 		}
-		logMapper.insert(new Log("getMessageBatch", res.toString()));
+		logMapper.insert(new Log("broker:getMessageBatch", res));
 		return new BaseResponsePack(0, res, "success");
 	}
 
@@ -158,11 +165,11 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 					messageQueue.removeMessage(message);
 					//从数据库删除
 					removeById(message.getMessageId());
-					logMapper.insert(new Log("consume success", message));
+					logMapper.insert(new Log("broker:consume success", message));
 				} else {
 					//没消费成功的，还原消息的消费状态
 					messageQueue.resetMessageConsumeStatus(message);
-					logMapper.insert(new Log("consume message fail,reset", message));
+					logMapper.insert(new Log("broker:consume message fail,reset", message));
 				}
 			} catch (NullPointerException e) {
 				return BaseResponsePack.simpleFail("messages not exist");
@@ -187,7 +194,7 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 			commitLog.add(queue);
 		}
 		consumeQueue.put(topic, queueList);
-		logMapper.insert(new Log("addTopic", topic + "(" + queueNum + ")"));
+		logMapper.insert(new Log("broker:addTopic", topic + "(" + queueNum + ")"));
 		return BaseResponsePack.simpleSuccess();
 	}
 
@@ -213,7 +220,7 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 			queueList.add(queue);
 			commitLog.add(queue);
 		}
-		logMapper.insert(new Log("setQueueNum", topic + "(" + queueNum + ")"));
+		logMapper.insert(new Log("broker:setQueueNum", topic + "(" + queueNum + ")"));
 		return BaseResponsePack.simpleSuccess();
 	}
 
@@ -223,7 +230,7 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 	@SneakyThrows
 	@Override
 	public BrokerRoutingInfo getBrokerRouting() {
-		Map<String, List<Integer>> topicInfo = new HashMap<>();
+		Map<String, List<Integer>> topicInfo = new HashMap<>(5);
 		consumeQueue.forEach((topic, queueList) -> {
 			List<Integer> queueIdList = new ArrayList<>();
 			queueList.forEach((queue) -> {
@@ -245,7 +252,7 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 		//通知 NameServer
 		BrokerRoutingInfo brokerRoutingInfo = new BrokerRoutingInfo(InetAddress.getLocalHost().getHostAddress(), brokerPort, brokerName, null);
 		httpUtil.sendShutDownToNameServer(brokerRoutingInfo);
-		logMapper.insert(new Log("shutdown broker", brokerName));
+		logMapper.insert(new Log("broker:shutdown", brokerName));
 		return BaseResponsePack.simpleSuccess();
 	}
 
@@ -266,7 +273,7 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 				}
 			}
 		}, 0, 30000);
-		logMapper.insert(new Log("start broker", brokerName));
+		logMapper.insert(new Log("broker:start", brokerName));
 		return BaseResponsePack.simpleSuccess();
 	}
 
@@ -277,7 +284,7 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 	public BaseResponsePack registerNameServer(String nameServerUrl) {
 		if (httpUtil.testUrl(nameServerUrl)) {
 			httpUtil.setNameServerUrl(nameServerUrl);
-			logMapper.insert(new Log("broker register NameServer", nameServerUrl));
+			logMapper.insert(new Log("broker:register NameServer", brokerName + "->" + nameServerUrl));
 			return BaseResponsePack.simpleSuccess();
 		} else {
 			return BaseResponsePack.simpleFail("url can't connect");

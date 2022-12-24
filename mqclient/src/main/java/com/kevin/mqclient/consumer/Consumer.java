@@ -124,15 +124,22 @@ public class Consumer {
 		//随机请求一个broker
 		BrokerRoutingInfo targetBrokerRoutingInfo = brokerRoutingInfoList.get(new Random().nextInt(brokerRoutingInfoList.size()));
 		List<Message> resMsgList = httpUtil.pullFromBroker(targetBrokerRoutingInfo, subscriptionMap, pullBatchSize);
+		//确认接收、记录消息
+		for (Message message : resMsgList) {
+			//可选：在此进行日志记录
+			message.getConsumeStatus().set(2);
+		}
+		//响应处理成功的 消息
+		httpUtil.feedback(resMsgList,targetBrokerRoutingInfo);
 		//如果不满足需求，请求其他broker
 		while (resMsgList.size() < pullBatchSize) {
 			for (BrokerRoutingInfo brokerRoutingInfo : brokerRoutingInfoList) {
 				List<Message> messageList = httpUtil.pullFromBroker(brokerRoutingInfo, subscriptionMap, pullBatchSize - resMsgList.size());
 				resMsgList.addAll(messageList);
+				//响应处理成功的 消息
+				httpUtil.feedback(messageList,brokerRoutingInfo);
 			}
 		}
-		//响应处理成功的 消息
-		httpUtil.feedback(resMsgList);
 		return resMsgList;
 	}
 
@@ -140,6 +147,9 @@ public class Consumer {
 	 * 向 NameServer 查询符合要求的 Broker 的信息。
 	 */
 	private void getBrokersFromNameServer() {
+		if (subscriptionMap.isEmpty()) {
+			return;
+		}
 		Map<String, List<BrokerRoutingInfo>> res = httpUtil.getBrokersByTopics(subscriptionMap.keySet(), nameServerUrl);
 		res.forEach((topic, brokers) -> {
 			brokerRoutingInfoList = new ArrayList<>();

@@ -2,6 +2,9 @@ package com.kevin.nameserver.controller;
 
 import com.kevin.kevinmq.common.BaseResponsePack;
 import com.kevin.kevinmq.common.BrokerRoutingInfo;
+import com.kevin.kevinmq.common.Log;
+import com.kevin.nameserver.dao.mapper.LogMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -26,6 +29,10 @@ public class NameServer {
 	private final Map<BrokerRoutingInfo, Integer> brokerHp = new HashMap<>();
 	private Timer hpTimer;
 	private boolean running;
+
+	@Autowired
+	private LogMapper logMapper;
+
 
 	@GetMapping("testNameServer")
 	public BaseResponsePack testUrl(){
@@ -52,6 +59,7 @@ public class NameServer {
 		}
 		//更新存活时间
 		brokerHp.put(brokerInfo, 12);
+		logMapper.insert(new Log("Name:updateBroker",brokerInfo));
 		return BaseResponsePack.simpleSuccess();
 	}
 
@@ -67,6 +75,7 @@ public class NameServer {
 				entry.getValue().remove(brokerInfo);
 			}
 			brokerHp.remove(brokerInfo);
+			logMapper.insert(new Log("Name:deleteBroker",brokerInfo));
 			return BaseResponsePack.simpleSuccess();
 		}else {
 			return BaseResponsePack.simpleFail("broker don't exist");
@@ -86,7 +95,7 @@ public class NameServer {
 	 */
 	@GetMapping("getBrokerInfoByTopic")
 	public BaseResponsePack getBrokerInfoByTopic(@RequestParam("topicSet") List<String> topicSet) {
-		Map<String, List<BrokerRoutingInfo>> res = new HashMap<>();
+		Map<String, List<BrokerRoutingInfo>> res = new HashMap<>(4);
 		for (String hopeTopic : topicSet) {
 			res.put(hopeTopic,topicBrokerMap.get(hopeTopic));
 		}
@@ -123,6 +132,7 @@ public class NameServer {
 				}
 			}
 		}, 0, 10000);
+		logMapper.insert(new Log("Name:start",null));
 		return BaseResponsePack.simpleSuccess();
 	}
 
@@ -135,6 +145,7 @@ public class NameServer {
 		topicBrokerMap.clear();
 		brokerHp.clear();
 		hpTimer.cancel();
+		logMapper.insert(new Log("Name:shutdown",null));
 		return BaseResponsePack.simpleSuccess();
 	}
 }

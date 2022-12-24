@@ -10,6 +10,7 @@
         <option value="$PROJECT_DIR$/producer/pom.xml" />
         <option value="$PROJECT_DIR$/mqclient/pom.xml" />
         <option value="$PROJECT_DIR$/appleshop/pom.xml" />
+        <option value="$PROJECT_DIR$/applestore/pom.xml" />
       </list>
     </option>
   </component>
