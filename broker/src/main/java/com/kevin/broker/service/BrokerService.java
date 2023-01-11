@@ -13,7 +13,7 @@ import java.util.Map;
 * @description 针对表【message(消息 存储表，用于持久化，防止宕机)】的数据库操作Service
 * @createDate 2022-12-19 19:56:44
 */
-public interface BrokerService extends IService<Message> {
+public interface BrokerService {
 
 	String getBrokerStatus();
 

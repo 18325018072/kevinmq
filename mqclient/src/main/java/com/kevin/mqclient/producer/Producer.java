@@ -154,7 +154,7 @@ public class Producer {
 		Integer targetQueueId = queueIdList.get(new Random().nextInt(queueIdList.size()));
 		msg.setQueueId(targetQueueId);
 		//发送
-		return httpUtil.sendSynchronously(msg, targetBrokerRoutingInfo, producerName, nameServerUrl);
+		return httpUtil.sendSynchronously(msg, targetBrokerRoutingInfo, producerName);
 	}
 
 	/**
@@ -164,7 +164,7 @@ public class Producer {
 	 */
 	public void sendAsync(Message msg, SendCallback callback) {
 		if (!running) {
-			throw new RuntimeException("please start producer first");
+			throw new RuntimeException("fail to send: producer haven't started yet");
 		}
 		asyncSendPool.execute(() -> {
 			//发送

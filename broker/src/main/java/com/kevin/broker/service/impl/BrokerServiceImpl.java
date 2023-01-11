@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.kevin.broker.dao.HttpUtil;
 import com.kevin.broker.dao.mapper.LogMapper;
 import com.kevin.broker.dao.mapper.MessageMapper;
+import com.kevin.broker.service.MessageService;
 import com.kevin.kevinmq.common.BrokerRoutingInfo;
 import com.kevin.broker.entry.MessageQueue;
 import com.kevin.broker.service.BrokerService;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.net.InetAddress;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author 20349
@@ -25,7 +28,8 @@ import java.util.*;
  * @createDate 2022-12-19 19:56:44
  */
 @Service
-public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> implements BrokerService {
+public class BrokerServiceImpl implements BrokerService {
+	MessageService messageService;
 
 	/**
 	 * 消息的存储主体
@@ -64,7 +68,8 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 	private final LogMapper logMapper;
 
 	@Autowired
-	public BrokerServiceImpl(HttpUtil httpUtil, LogMapper logMapper) {
+	public BrokerServiceImpl(HttpUtil httpUtil, LogMapper logMapper, MessageService messageService) {
+		this.messageService = messageService;
 		this.httpUtil = httpUtil;
 		this.logMapper = logMapper;
 	}
@@ -75,7 +80,7 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 	}
 
 	/**
-	 * 接收 生产者的消息
+	 * 接收 生产者的消息。如果没topic，拒绝；如果没tag，设为*。
 	 */
 	@Override
 	public BaseResponsePack receiveMessage(Message message, String producerName) {
@@ -96,8 +101,10 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 		if (message.getTag() == null || "".equals(message.getTag())) {
 			message.setTag(ALL_SUB_TAG);
 		}
+		//设置消费状态
+		message.setConsumeStatus(new AtomicInteger(0));
 		//持久化：存入数据库。会自动添加ID
-		save(message);
+		messageService.save(message);
 		//存入缓存
 		messageQueue.addMessage(message);
 		logMapper.insert(new Log("broker:receiveMessage", message));
@@ -105,13 +112,15 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 	}
 
 	/**
-	 * 为 消费者 提供消息。<br/>
-	 * PS：本来应该是get，但get不适合有请求体
-	 *
-	 * @return 消息 list
+	 * 为 消费者 提供 消息list。<br/>如果没tag，跳过不给（这意味着当消费者通吃时，消费者必须显示声明订阅条件为*）。
 	 */
 	@Override
 	public BaseResponsePack getMessageBatch(Map<String, List<String>> subInfoMap, long pullBatchSize) {
+		if (subInfoMap == null || subInfoMap.isEmpty()) {
+			return BaseResponsePack.simpleFail("empty subscribe");
+		} else if (pullBatchSize == 0) {
+			return BaseResponsePack.simpleFail("pullBatchSize can't be 0");
+		}
 		List<Message> res = new ArrayList<>();
 		Set<Map.Entry<String, List<String>>> subEntries = subInfoMap.entrySet();
 		for (Map.Entry<String, List<String>> subEntry : subEntries) {
@@ -129,27 +138,22 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 			for (MessageQueue messageQueue : messageQueueList) {
 				List<Message> messageList = messageQueue.getData();
 				for (Message message : messageList) {
-					if (!message.getConsumeStatus().compareAndSet(0, 1)) {
-						continue;
-					}
 					//提取 tag 符合的消息
-					if (subTagList.contains(ALL_SUB_TAG)) {
+					boolean isMessageAbleSend = subTagList.contains(ALL_SUB_TAG) || ALL_SUB_TAG.equals(message.getTag()) || subTagList.contains(message.getTag());
+					if (isMessageAbleSend && message.getConsumeStatus().compareAndSet(0, 1)) {
 						res.add(message);
-					} else {
-						if (subTagList.contains(message.getTag())) {
-							res.add(message);
-						}
 					}
 					//如果数量够了，则可以返回
 					if (res.size() >= pullBatchSize) {
-						logMapper.insert(new Log("broker:getMessageBatch", res));
-						return new BaseResponsePack(0, res, "success");
+						logMapper.insert(new Log("broker:getMessageBatch", "provide num:" + res.size()));
+						return new BaseResponsePack(0, res, "success:enough");
 					}
 				}
 			}
 		}
-		logMapper.insert(new Log("broker:getMessageBatch", res));
-		return new BaseResponsePack(0, res, "success");
+		//数量不够，但扫描完毕了，只能返回
+		logMapper.insert(new Log("broker:getMessageBatch", "provide num:" + res.size()));
+		return new BaseResponsePack(0, res, "success:not enough");
 	}
 
 	/**
@@ -157,23 +161,15 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 	 */
 	@Override
 	public BaseResponsePack solveConsumerFeedback(@RequestBody List<Message> consumeResult) {
+		System.out.println("solve feedback num:" + consumeResult.size());
 		for (Message message : consumeResult) {
 			MessageQueue messageQueue = consumeQueue.get(message.getTopic()).get(message.getQueueId());
-			try {
-				if (message.getConsumeStatus().get() == 2) {
-					//从java缓冲中删除
-					messageQueue.removeMessage(message);
-					//从数据库删除
-					removeById(message.getMessageId());
-					logMapper.insert(new Log("broker:consume success", message));
-				} else {
-					//没消费成功的，还原消息的消费状态
-					messageQueue.resetMessageConsumeStatus(message);
-					logMapper.insert(new Log("broker:consume message fail,reset", message));
-				}
-			} catch (NullPointerException e) {
-				return BaseResponsePack.simpleFail("messages not exist");
-			}
+			//从java缓冲中删除
+			messageQueue.removeMessage(message);
+			//从数据库删除
+			messageService.removeById(message.getMessageId());
+			logMapper.insert(new Log("broker:consume success", message));
+			//TODO:没消费成功的，还原消息的消费状态
 		}
 		return BaseResponsePack.simpleSuccess();
 	}
@@ -185,11 +181,11 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 	@Override
 	public BaseResponsePack addTopic(String topic, int queueNum) {
 		if (consumeQueue.containsKey(topic)) {
-			return BaseResponsePack.simpleFail("topic has been set");
+			return BaseResponsePack.simpleFail("The topic already exists");
 		}
 		List<MessageQueue> queueList = new ArrayList<>();
 		for (int i = 0; i < queueNum; i++) {
-			MessageQueue queue = new MessageQueue(brokerId, topic, i, new ArrayList<>());
+			MessageQueue queue = new MessageQueue(brokerId, topic, i, new CopyOnWriteArrayList<>());
 			queueList.add(queue);
 			commitLog.add(queue);
 		}
@@ -216,7 +212,7 @@ public class BrokerServiceImpl extends ServiceImpl<MessageMapper, Message> imple
 			queueList.remove(0);
 		}
 		while (queueList.size() < queueNum) {
-			MessageQueue queue = new MessageQueue(brokerId, topic, queueList.size(), new ArrayList<>());
+			MessageQueue queue = new MessageQueue(brokerId, topic, queueList.size(), new CopyOnWriteArrayList<>());
 			queueList.add(queue);
 			commitLog.add(queue);
 		}

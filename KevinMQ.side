@@ -50,13 +50,14 @@
       "id": "189db165-ed12-4a17-b614-1883d490d7ce",
       "comment": "",
       "command": "click",
-      "target": "id=name-server",
+      "target": "id=name-init-btn",
       "targets": [
-        ["id=name-server", "id"],
-        ["css=#name-server", "css:finder"],
-        ["xpath=//div[@id='name-server']", "xpath:attributes"],
-        ["xpath=//div[@id='app']/div/div", "xpath:idRelative"],
-        ["xpath=//div/div/div", "xpath:position"]
+        ["id=name-init-btn", "id"],
+        ["css=#name-init-btn", "css:finder"],
+        ["xpath=//button[@id='name-init-btn']", "xpath:attributes"],
+        ["xpath=//div[@id='name-server']/button", "xpath:idRelative"],
+        ["xpath=//button", "xpath:position"],
+        ["xpath=//button[contains(.,'启动')]", "xpath:innerText"]
       ],
       "value": ""
     }, {

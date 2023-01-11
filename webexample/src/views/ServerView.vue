@@ -239,9 +239,9 @@ function registerNameServer() {
           </tr>
         </table>
       </div>
-      <button class="run-btn" v-if="isNameServerRunning" @click="shutdownNameServer">关闭</button>
-      <button class="down-btn" v-else @click="initNameServer">启动</button>
-      <button v-if="isNameServerRunning" @click="getBrokersInfo">刷新NameServer信息</button>
+      <button id="name-shutdown-btn" class="run-btn" v-if="isNameServerRunning" @click="shutdownNameServer">关闭</button>
+      <button id="name-init-btn" class="down-btn" v-else @click="initNameServer">启动</button>
+      <button id="name-flush-btn" v-if="isNameServerRunning" @click="getBrokersInfo">刷新NameServer信息</button>
     </div>
 
     <div id="broker" class="block1">

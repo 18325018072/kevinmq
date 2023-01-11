@@ -4,7 +4,6 @@ package com.kevin.broker.dao.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.kevin.kevinmq.common.Message;
 import org.apache.ibatis.annotations.Mapper;
-import org.springframework.stereotype.Repository;
 
 /**
 * @author 20349

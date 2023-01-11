@@ -2,6 +2,7 @@ package com.kevin.applestore.controller;
 
 import com.kevin.applestore.service.AppleStoreService;
 import com.kevin.kevinmq.common.BaseResponsePack;
+import com.kevin.mqclient.consumer.Consumer;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -24,15 +25,15 @@ public class AppleStoreController {
 	}
 
 	@GetMapping("testStore")
-	public BaseResponsePack testStore(String nameIp){
-		return BaseResponsePack.simpleSuccess();
+	public BaseResponsePack testStore(String nameIp) {
+		return service.tryConnect(nameIp);
 	}
 
 	/**
 	 * 设置出售速度（消息接收速度）
 	 */
 	@PutMapping("setSpeed")
-	public BaseResponsePack setSpeed(@RequestBody Map<String,Integer> map){
+	public BaseResponsePack setSpeed(@RequestBody Map<String, Integer> map) {
 		return service.setSpeed(map.get("speed"));
 	}
 
@@ -40,7 +41,7 @@ public class AppleStoreController {
 	 * 查询已销售数量
 	 */
 	@GetMapping("getSoldNum")
-	public BaseResponsePack getSoldNum(){
-		return new BaseResponsePack(0,service.getSoldNum(),"success") ;
+	public BaseResponsePack getSoldNum() {
+		return new BaseResponsePack(0, service.getSoldNum(), "success");
 	}
 }

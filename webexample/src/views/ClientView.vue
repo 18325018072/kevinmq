@@ -24,7 +24,6 @@ function testNameServer() {
 //苹果店前端
 const shopUrl = 'http://localhost:7002'
 let isShopRunning = ref(false);
-let appleSold = ref(0);
 let testShop = setInterval(() => {
   if (nameServerStatus.value === 'started') {
     axios.get(shopUrl + '/testShop', {params: {nameIp: nameServerIp.value}})
@@ -39,17 +38,17 @@ let testShop = setInterval(() => {
 }, 1000)
 
 function syncSold() {
-  axios.post(shopUrl + '/syncSoldApple', {num: 100})
+  axios.post(shopUrl + '/syncSoldApple', {num: 1000})
       .catch(e => alert('出售失败' + e));
 }
 
 function asyncSold() {
-  axios.post(shopUrl + '/asyncSoldApple', {num: 100})
+  axios.post(shopUrl + '/asyncSoldApple', {num: 1000})
       .catch(e => alert('出售失败' + e));
 }
 
 //苹果店服务器
-const storeUrl = 'http://localhost:7003'
+const storeUrl = 'http://localhost:7003';
 let isStoreRunning = ref(false);
 let soldNum = ref(0);
 //测试连接store
@@ -74,7 +73,7 @@ let getSoldNum = setInterval(() => {
       }
     })
   }
-}, 5000);
+}, 3000);
 
 function changeSpeed(e) {
   axios.put(storeUrl + '/setSpeed', {speed: e.target.value})
@@ -110,7 +109,7 @@ function changeSpeed(e) {
         <input id="input-consume-speed" type="text" placeholder="10" @blur="changeSpeed"/>
         <span>个/秒</span>
       </div>
-      <div>已出售{{ appleSold }}个苹果！</div>
+      <div>已出售{{ soldNum }}个苹果！</div>
     </div>
   </div>
 </template>

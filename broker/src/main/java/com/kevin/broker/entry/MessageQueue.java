@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * ConsumeQueue （逻辑消费队列）作为消费消息的索引，保存了指定 Topic 下的队列消息在 CommitLog 中的起始物理偏移量 offset ，
@@ -15,7 +16,8 @@ import java.util.List;
  * last updated:2022/5/16
  */
 @Data
-@AllArgsConstructor@NoArgsConstructor
+@AllArgsConstructor
+@NoArgsConstructor
 public class MessageQueue {
 	/**
 	 * broker名 + topic名 + queue序号
@@ -23,24 +25,22 @@ public class MessageQueue {
 	private Integer brokerId;
 	private String topic;
 	private Integer queueId;
-	private List<Message> data;
+	private CopyOnWriteArrayList<Message> data;
 
 	public void addMessage(Message msg) {
 		data.add(msg);
 	}
 
-	public void removeMessage(Message message){
+	public void removeMessage(Message message) {
 		data.remove(message);
 	}
 
 	/**
 	 * 初始化消息的消费状态
 	 */
-	public void resetMessageConsumeStatus(Message message){
-		for (Message m : data) {
-			if (m.equals(message)) {
-				m.getConsumeStatus().set(0);
-			}
-		}
+	public void resetMessageConsumeStatus(Message message) {
+		data.remove(message);
+		message.getConsumeStatus().set(0);
+		data.add(message);
 	}
 }

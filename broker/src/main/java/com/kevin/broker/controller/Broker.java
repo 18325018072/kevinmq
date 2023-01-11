@@ -20,13 +20,15 @@ import java.util.Map;
  *
  * @author Kevin2
  */
-@Data
-@NoArgsConstructor
 @RestController
 @CrossOrigin
 public class Broker {
-	@Autowired
 	BrokerService service;
+
+	@Autowired
+	public Broker(BrokerService service) {
+		this.service = service;
+	}
 
 	@GetMapping("testBroker")
 	public BaseResponsePack testUrl() {

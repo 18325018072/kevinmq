@@ -26,26 +26,30 @@ public class Consumer {
 	 * 订阅条件：{@code map<topic,List<tag>>}
 	 */
 	private ConcurrentMap<String, List<String>> subscriptionMap = new ConcurrentHashMap<>();
+
 	/**
 	 * Consumer名
 	 */
 	private String consumerName = "Default Consumer";
+
 	/**
 	 * 符合订阅要求的{@code  List<broker> }列表
 	 */
-	private List<BrokerRoutingInfo> brokerRoutingInfoList;
+	private List<BrokerRoutingInfo> brokerRoutingInfoList = new ArrayList<>();
+	;
+
 	/**
 	 * 运行 & 订阅后，会向 NameServer 发送询问 /30s。
 	 */
 	private boolean running = false;
-	private final String ALL_SUB = "*";
+	private static final String ALL_SUB = "*";
+	private static final int MAX_TRY_GET_TIME = 5;
 	private boolean localBrokerInfoInitialized = false;
 	/**
 	 * Timer：向 NameServer 发送询问 /30s。
 	 */
 	Timer heartToNameserverTimer;
 
-	@Autowired
 	private HttpUtil httpUtil;
 
 	/**
@@ -53,8 +57,9 @@ public class Consumer {
 	 */
 	private String nameServerUrl;
 
-	public Consumer(String name) {
-		this.consumerName = name;
+	@Autowired
+	public Consumer(HttpUtil httpUtil) {
+		this.httpUtil = httpUtil;
 	}
 
 	/**
@@ -114,30 +119,31 @@ public class Consumer {
 	/**
 	 * 向 broker 拉取一定数量的消息
 	 */
-	public List<Message> pull(long pullBatchSize) throws Exception {
+	public List<Message> pull(long pullBatchSize) {
 		if (!running) {
-			throw new Exception("consumer haven't start yet");
+			throw new RuntimeException("consumer haven't start yet");
 		}
 		if (brokerRoutingInfoList == null || brokerRoutingInfoList.isEmpty()) {
 			return null;
 		}
-		//随机请求一个broker
+		//1.随机请求一个broker
 		BrokerRoutingInfo targetBrokerRoutingInfo = brokerRoutingInfoList.get(new Random().nextInt(brokerRoutingInfoList.size()));
-		List<Message> resMsgList = httpUtil.pullFromBroker(targetBrokerRoutingInfo, subscriptionMap, pullBatchSize);
-		//确认接收、记录消息
-		for (Message message : resMsgList) {
-			//可选：在此进行日志记录
-			message.getConsumeStatus().set(2);
+		List<Message> resMsgList = new ArrayList<>();
+		List<Message> getList = httpUtil.pullFromBroker(targetBrokerRoutingInfo, subscriptionMap, pullBatchSize);
+		if (getList != null) {
+			resMsgList.addAll(getList);
+			//响应处理成功的 消息
+			httpUtil.feedback(getList, targetBrokerRoutingInfo);
 		}
-		//响应处理成功的 消息
-		httpUtil.feedback(resMsgList,targetBrokerRoutingInfo);
-		//如果不满足需求，请求其他broker
-		while (resMsgList.size() < pullBatchSize) {
+		//2.如果不满足需求，请求其他broker,最多循环MAX_TRY_GET_TIME次
+		for (int tryTime = 0; tryTime < MAX_TRY_GET_TIME && resMsgList.size() < pullBatchSize; tryTime++) {
 			for (BrokerRoutingInfo brokerRoutingInfo : brokerRoutingInfoList) {
-				List<Message> messageList = httpUtil.pullFromBroker(brokerRoutingInfo, subscriptionMap, pullBatchSize - resMsgList.size());
-				resMsgList.addAll(messageList);
-				//响应处理成功的 消息
-				httpUtil.feedback(messageList,brokerRoutingInfo);
+				getList = httpUtil.pullFromBroker(brokerRoutingInfo, subscriptionMap, pullBatchSize - resMsgList.size());
+				if (getList != null) {
+					resMsgList.addAll(getList);
+					//响应处理成功的 消息
+					httpUtil.feedback(getList, targetBrokerRoutingInfo);
+				}
 			}
 		}
 		return resMsgList;
@@ -151,10 +157,8 @@ public class Consumer {
 			return;
 		}
 		Map<String, List<BrokerRoutingInfo>> res = httpUtil.getBrokersByTopics(subscriptionMap.keySet(), nameServerUrl);
-		res.forEach((topic, brokers) -> {
-			brokerRoutingInfoList = new ArrayList<>();
-			brokerRoutingInfoList.addAll(brokers);
-		});
+		brokerRoutingInfoList.clear();
+		res.forEach((topic, brokerList) -> brokerRoutingInfoList.addAll(brokerList));
 	}
 
 	/**

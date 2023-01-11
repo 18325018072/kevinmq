@@ -30,14 +30,14 @@ public class WebShopController {
 	}
 
 	@GetMapping("testShop")
-	public BaseResponsePack testShop(String nameIp) {
-		if (nameIp==null){
+	public BaseResponsePack registerNameServer(String nameIp) {
+		if (nameIp == null) {
 			return BaseResponsePack.simpleFail("need nameServerUrl");
 		}
 		boolean isSuccessConnected = producer.setNameserverAddr(nameIp);
-		if (isSuccessConnected){
+		if (isSuccessConnected) {
 			producer.start();
-		}else {
+		} else {
 			return BaseResponsePack.simpleFail("invalid address");
 		}
 		return BaseResponsePack.simpleSuccess();
@@ -45,7 +45,7 @@ public class WebShopController {
 
 	@PostMapping("syncSoldApple")
 	public BaseResponsePack syncSoldApple(@RequestBody Map<String, Integer> map) {
-		Message message = new Message("apple", null, "buy one");
+		Message message = new Message("apple", null, "buy:1");
 		for (int i = 0; i < map.get(PacAttrNum); i++) {
 			BaseResponsePack res = producer.sendSynchronously(message);
 			if (res.getStatus() != 0) {
@@ -56,18 +56,17 @@ public class WebShopController {
 	}
 
 	@PostMapping("asyncSoldApple")
-	public BaseResponsePack asyncSoldApple(Integer num) {
+	public BaseResponsePack asyncSoldApple(@RequestBody Map<String, Integer> map) {
 		Message message = new Message("apple", null, "buy:1");
-		for (int i = 0; i < num; i++) {
+		for (int i = 0; i < map.get(PacAttrNum); i++) {
 			producer.sendAsync(message, new SendCallback() {
 				@Override
 				public void onSuccess(BaseResponsePack sendResult) {
-
+					//成功反馈和跳转
 				}
-
 				@Override
 				public void onFail(BaseResponsePack sendResult) {
-
+					//失败反馈和跳转
 				}
 			});
 

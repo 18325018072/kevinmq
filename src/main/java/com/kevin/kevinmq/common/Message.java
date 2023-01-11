@@ -1,5 +1,6 @@
 package com.kevin.kevinmq.common;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -50,7 +51,11 @@ public class Message implements Serializable {
 	/**
 	 * 消费状态：0未消费，1消费中，2已消费
 	 */
+	@TableField(exist = false)
 	private AtomicInteger consumeStatus = new AtomicInteger(0);
+
+	@TableField(exist = false)
+	private static final long serialVersionUID = 1L;
 
 	public Message(String topic, String tag, String body) {
 		this.topic = topic;

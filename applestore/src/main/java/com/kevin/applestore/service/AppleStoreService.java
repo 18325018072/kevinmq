@@ -28,30 +28,50 @@ public class AppleStoreService {
 	/**
 	 * 每秒拉取消息
 	 */
-	private final Timer getMessageTimer;
+	private Timer getMessageTimer;
 
-	private final Consumer consumer = new Consumer("appleConsumer");
+	private final Consumer consumer;
 
-	public AppleStoreService() {
+	@Autowired
+	public AppleStoreService(Consumer consumer) {
+		consumer.setConsumerName("storeConsumer");
 		consumer.addSubscribe("apple", null);
-		getMessageTimer = new Timer("getMessageTimer");
-		getMessageTimer.scheduleAtFixedRate(new TimerTask() {
-			@Override
-			public void run() {
-				if (consumer.isRunning()) {
-					try {
-						List<Message> messageList = consumer.pull(sellSpeed);
-						if (messageList != null && !messageList.isEmpty()) {
-							processMessageList(messageList);
-						}
-					} catch (Exception e) {
-						throw new RuntimeException(e);
-					}
-				}
-			}
-		}, 0, 1000);
+		this.consumer = consumer;
 	}
 
+	/**
+	 * 连接 NameServer，并开始拉取
+	 */
+	public BaseResponsePack tryConnect(String nameIp) {
+		if (nameIp == null) {
+			return BaseResponsePack.simpleFail("need nameServerUrl");
+		}
+		boolean isSuccessConnected = consumer.setNameserverAddr(nameIp);
+		if (isSuccessConnected) {
+			consumer.start();
+			//每秒拉取消息
+			getMessageTimer = new Timer("getMessageTimer");
+			getMessageTimer.scheduleAtFixedRate(new TimerTask() {
+				@Override
+				public void run() {
+					if (consumer.isRunning()) {
+						List<Message> messageList = consumer.pull(sellSpeed);
+						if (messageList != null && !messageList.isEmpty()) {
+							System.out.println("store get messageList num: " + messageList.size());
+							processMessageList(messageList);
+						}
+					}
+				}
+			}, 0, 1000);
+		} else {
+			return BaseResponsePack.simpleFail("invalid address");
+		}
+		return BaseResponsePack.simpleSuccess();
+	}
+
+	/**
+	 * 出售（处理消息）
+	 */
 	public void processMessageList(List<Message> messageList) {
 		for (Message message : messageList) {
 			if ("apple".equals(message.getTopic())) {
@@ -63,12 +83,20 @@ public class AppleStoreService {
 		}
 	}
 
+	/**
+	 * 获取已出售的数量
+	 */
 	public long getSoldNum() {
 		return soldNum;
 	}
 
+	/**
+	 * 设置出售速度（拉取速度）
+	 */
 	public BaseResponsePack setSpeed(int speed) {
 		sellSpeed = speed;
 		return BaseResponsePack.simpleSuccess();
 	}
+
+
 }
