@@ -1,12 +1,12 @@
 package com.kevin.broker.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.kevin.broker.dao.HttpUtil;
+import com.kevin.broker.dao.mapper.DeadLetterQueueMapper;
 import com.kevin.broker.dao.mapper.LogMapper;
-import com.kevin.broker.dao.mapper.MessageMapper;
+import com.kevin.broker.domain.DeadLetterQueue;
 import com.kevin.broker.service.MessageService;
 import com.kevin.kevinmq.common.BrokerRoutingInfo;
-import com.kevin.broker.entry.MessageQueue;
+import com.kevin.broker.domain.MessageQueue;
 import com.kevin.broker.service.BrokerService;
 import com.kevin.kevinmq.common.BaseResponsePack;
 import com.kevin.kevinmq.common.Log;
@@ -57,6 +57,12 @@ public class BrokerServiceImpl implements BrokerService {
 	private int brokerPort;
 
 	private final String ALL_SUB_TAG = "*";
+
+	/**
+	 * 最多重试发送次数，超过则进入死信队列
+	 */
+	private final static int MAX_RETRY_TIME = 5;
+
 	private boolean running;
 	/**
 	 * 每隔30s 发送心跳到 NameServer：注册 broker 信息
@@ -67,11 +73,14 @@ public class BrokerServiceImpl implements BrokerService {
 
 	private final LogMapper logMapper;
 
+	private final DeadLetterQueueMapper deadLetterQueueMapper;
+
 	@Autowired
-	public BrokerServiceImpl(HttpUtil httpUtil, LogMapper logMapper, MessageService messageService) {
+	public BrokerServiceImpl(HttpUtil httpUtil, LogMapper logMapper, MessageService messageService, DeadLetterQueueMapper deadLetterQueueMapper) {
 		this.messageService = messageService;
 		this.httpUtil = httpUtil;
 		this.logMapper = logMapper;
+		this.deadLetterQueueMapper = deadLetterQueueMapper;
 	}
 
 	@Override
@@ -86,8 +95,8 @@ public class BrokerServiceImpl implements BrokerService {
 	public BaseResponsePack receiveMessage(Message message, String producerName) {
 		//1.检查topic
 		String msgTopic = message.getTopic();
-		if (!consumeQueue.containsKey(msgTopic)) {
-			return new BaseResponsePack(1, null, "Broker Don't have such topic");
+		if (msgTopic == null || !consumeQueue.containsKey(msgTopic)) {
+			return BaseResponsePack.simpleFail("Broker Doesn't have such topic:" + msgTopic);
 		}
 		//2.找到对应queue
 		Integer msgQueueId = message.getQueueId();
@@ -95,27 +104,27 @@ public class BrokerServiceImpl implements BrokerService {
 		try {
 			messageQueue = consumeQueue.get(msgTopic).get(msgQueueId);
 		} catch (IndexOutOfBoundsException e) {
-			return new BaseResponsePack(1, null, "Broker's topic Don't have such queueId");
+			return BaseResponsePack.simpleFail("Broker's topic Don't have this queueId:" + msgQueueId);
 		}
-		//3.处理tag
+		//3.处理tag:如果没tag，设为*
 		if (message.getTag() == null || "".equals(message.getTag())) {
 			message.setTag(ALL_SUB_TAG);
 		}
 		//设置消费状态
-		message.setConsumeStatus(new AtomicInteger(0));
+		message.getConsumeStatus().set(0);
 		//持久化：存入数据库。会自动添加ID
 		messageService.save(message);
 		//存入缓存
 		messageQueue.addMessage(message);
 		logMapper.insert(new Log("broker:receiveMessage", message));
-		return new BaseResponsePack(0, message.getMessageId(), "success");
+		return new BaseResponsePack(BaseResponsePack.SUCCESS_CODE, message.getMessageId(), "success");
 	}
 
 	/**
 	 * 为 消费者 提供 消息list。<br/>如果没tag，跳过不给（这意味着当消费者通吃时，消费者必须显示声明订阅条件为*）。
 	 */
 	@Override
-	public BaseResponsePack getMessageBatch(Map<String, List<String>> subInfoMap, long pullBatchSize) {
+	public BaseResponsePack provideMessage(Map<String, List<String>> subInfoMap, long pullBatchSize) {
 		if (subInfoMap == null || subInfoMap.isEmpty()) {
 			return BaseResponsePack.simpleFail("empty subscribe");
 		} else if (pullBatchSize == 0) {
@@ -137,7 +146,25 @@ public class BrokerServiceImpl implements BrokerService {
 			//进入messageQueueList中提取 未消费的消息
 			for (MessageQueue messageQueue : messageQueueList) {
 				List<Message> messageList = messageQueue.getData();
-				for (Message message : messageList) {
+				Iterator<Message> iterator = messageList.iterator();
+				while (iterator.hasNext()) {
+					Message message = iterator.next();
+					//如果是已发送的消息，则减一重试倒计时，并跳过。
+					if (message.getConsumeStatus().get() == 1) {
+						message.subtractCountdown();
+						//如果已经过一段时间还没确认发送成功，则需要重新发送。
+						if (message.getRetryCountdown() <= 0) {
+							message.retry();
+							//发送次数超过MAX_RETRY_TIME，则放弃发送，将消息送入死信队列
+							if (message.getRetryTime() >= MAX_RETRY_TIME) {
+								deadLetterQueueMapper.insert(new DeadLetterQueue(message));
+								iterator.remove();
+								continue;
+							}
+						} else {
+							continue;
+						}
+					}
 					//提取 tag 符合的消息
 					boolean isMessageAbleSend = subTagList.contains(ALL_SUB_TAG) || ALL_SUB_TAG.equals(message.getTag()) || subTagList.contains(message.getTag());
 					if (isMessageAbleSend && message.getConsumeStatus().compareAndSet(0, 1)) {
@@ -146,14 +173,14 @@ public class BrokerServiceImpl implements BrokerService {
 					//如果数量够了，则可以返回
 					if (res.size() >= pullBatchSize) {
 						logMapper.insert(new Log("broker:getMessageBatch", "provide num:" + res.size()));
-						return new BaseResponsePack(0, res, "success:enough");
+						return new BaseResponsePack(BaseResponsePack.SUCCESS_CODE, res, "success:enough");
 					}
 				}
 			}
 		}
 		//数量不够，但扫描完毕了，只能返回
 		logMapper.insert(new Log("broker:getMessageBatch", "provide num:" + res.size()));
-		return new BaseResponsePack(0, res, "success:not enough");
+		return new BaseResponsePack(BaseResponsePack.SUCCESS_CODE, res, "success:not enough");
 	}
 
 	/**

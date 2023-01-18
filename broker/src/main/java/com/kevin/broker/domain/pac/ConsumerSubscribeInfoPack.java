@@ -1,4 +1,4 @@
-package com.kevin.broker.entry.pac;
+package com.kevin.broker.domain.pac;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

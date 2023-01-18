@@ -2,13 +2,11 @@ package com.kevin.broker.controller;
 
 
 import com.kevin.kevinmq.common.BrokerRoutingInfo;
-import com.kevin.broker.entry.pac.ConsumerSubscribeInfoPack;
-import com.kevin.broker.entry.pac.MessagePackFromProducer;
+import com.kevin.broker.domain.pac.ConsumerSubscribeInfoPack;
+import com.kevin.broker.domain.pac.MessagePackFromProducer;
 import com.kevin.broker.service.BrokerService;
 import com.kevin.kevinmq.common.BaseResponsePack;
 import com.kevin.kevinmq.common.Message;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,7 +55,7 @@ public class Broker {
 		//提取数据
 		Map<String, List<String>> subInfoMap = subscribeInfoPack.getSubInfoMap();
 		long pullBatchSize = subscribeInfoPack.getPullBatchSize();
-		return service.getMessageBatch(subInfoMap, pullBatchSize);
+		return service.provideMessage(subInfoMap, pullBatchSize);
 	}
 
 	/**

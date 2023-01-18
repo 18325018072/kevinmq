@@ -136,24 +136,33 @@ public class Producer {
 	 * @return 发送结果
 	 */
 	public BaseResponsePack sendSynchronously(Message msg) {
+		//1.检查运行状态
 		if (!running) {
 			throw new RuntimeException("please start producer first");
 		}
-		//检查topic-broker路由
+		//2.检查topic
+		if (msg.getTopic() == null) {
+			return BaseResponsePack.simpleFail("message's topic doesn't exist");
+		}
+		//3.检查tag
+		if (msg.getTag()==null||"".equals(msg.getTag())){
+			msg.setTag("*");
+		}
+		//4.检查topic-broker路由
 		if (!topicBrokerMap.containsKey(msg.getTopic())) {
 			if (!searchBrokersFromNameServer(msg.getTopic())) {
-				return new BaseResponsePack(1, msg, "Broker_NotFound");
+				return new BaseResponsePack(BaseResponsePack.FAIL_CODE, msg, "Can't find suitable broker");
 			}
 		}
-		//随机选择一个 broker
+		//5.随机选择一个 broker
 		List<BrokerRoutingInfo> brokerRoutingInfoList = topicBrokerMap.get(msg.getTopic());
 		int i = new Random().nextInt(brokerRoutingInfoList.size());
 		BrokerRoutingInfo targetBrokerRoutingInfo = brokerRoutingInfoList.get(i);
-		//随机选择一个 queue
+		//6.随机选择一个 queue
 		List<Integer> queueIdList = targetBrokerRoutingInfo.getTopicInfo().get(msg.getTopic());
 		Integer targetQueueId = queueIdList.get(new Random().nextInt(queueIdList.size()));
 		msg.setQueueId(targetQueueId);
-		//发送
+		//7.发送
 		return httpUtil.sendSynchronously(msg, targetBrokerRoutingInfo, producerName);
 	}
 

@@ -1,4 +1,4 @@
-package com.kevin.broker.entry;
+package com.kevin.broker.domain;
 
 import com.kevin.kevinmq.common.Message;
 import lombok.AllArgsConstructor;

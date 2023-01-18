@@ -2,7 +2,6 @@ package com.kevin.applestore.controller;
 
 import com.kevin.applestore.service.AppleStoreService;
 import com.kevin.kevinmq.common.BaseResponsePack;
-import com.kevin.mqclient.consumer.Consumer;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +16,7 @@ import java.util.Map;
 @CrossOrigin
 @Data
 public class AppleStoreController {
+
 	private AppleStoreService service;
 
 	@Autowired
@@ -42,6 +42,6 @@ public class AppleStoreController {
 	 */
 	@GetMapping("getSoldNum")
 	public BaseResponsePack getSoldNum() {
-		return new BaseResponsePack(0, service.getSoldNum(), "success");
+		return new BaseResponsePack(BaseResponsePack.SUCCESS_CODE, service.getSoldNum(), "success");
 	}
 }

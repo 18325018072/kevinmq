@@ -1,6 +1,5 @@
 package com.kevin.broker.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.kevin.kevinmq.common.BrokerRoutingInfo;
 import com.kevin.kevinmq.common.BaseResponsePack;
 import com.kevin.kevinmq.common.Message;
@@ -28,7 +27,7 @@ public interface BrokerService {
 	 *
 	 * @return 消息 list
 	 */
-	BaseResponsePack getMessageBatch(Map<String, List<String>> subInfoMap, long pullBatchSize);
+	BaseResponsePack provideMessage(Map<String, List<String>> subInfoMap, long pullBatchSize);
 
 	/**
 	 * 处理 消费者 消费结果
